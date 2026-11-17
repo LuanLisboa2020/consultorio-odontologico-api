@@ -35,3 +35,4 @@ build/
 ### Arquivos locais e informações sensíveis ###
 .env
 application-local.properties
+application-bootstrap.properties

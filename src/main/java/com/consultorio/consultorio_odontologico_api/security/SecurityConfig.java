@@ -16,7 +16,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+        HttpSecurity http,
+        JwtAuthenticationFilter jwtAuthenticationFilter,
+        SecurityExceptionHandler securityExceptionHandler) throws Exception {
 
         http
             // Desabilita CSRF para a API stateless
@@ -27,6 +29,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
                 .anyRequest().authenticated()
+            )
+
+             // Personaliza as respostas de erro 401 e 403
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(securityExceptionHandler)
+                .accessDeniedHandler(securityExceptionHandler)
             )
 
             // Adiciona o filtro JWT antes do filtro de autenticação padrão
