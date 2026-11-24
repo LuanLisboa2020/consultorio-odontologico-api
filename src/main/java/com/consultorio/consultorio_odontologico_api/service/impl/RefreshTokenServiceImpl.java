@@ -1,3 +1,4 @@
+
 package com.consultorio.consultorio_odontologico_api.service.impl;
 
 import java.nio.charset.StandardCharsets;
@@ -8,7 +9,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,15 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.consultorio.consultorio_odontologico_api.entity.RefreshToken;
 import com.consultorio.consultorio_odontologico_api.entity.Usuario;
 import com.consultorio.consultorio_odontologico_api.repository.RefreshTokenRepository;
+import com.consultorio.consultorio_odontologico_api.service.RefreshTokenCreationResult;
 import com.consultorio.consultorio_odontologico_api.service.RefreshTokenService;
 
 @Service
 public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
-
     private final long refreshTokenExpiration;
-
     private final SecureRandom secureRandom = new SecureRandom();
 
     public RefreshTokenServiceImpl(
@@ -44,10 +43,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     @Transactional
-    public String criarRefreshToken(Usuario usuario, UUID sessionId) {
+    public RefreshTokenCreationResult criarRefreshToken(
+            Usuario usuario,
+            UUID sessionId) {
 
         byte[] bytes = new byte[32];
-
         secureRandom.nextBytes(bytes);
 
         String token = Base64.getUrlEncoder()
@@ -59,14 +59,14 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         refreshToken.setUsuario(usuario);
         refreshToken.setTokenHash(gerarHash(token));
         refreshToken.setSessionId(sessionId);
+        refreshToken.setDataExpiracao(LocalDateTime.now().plus(Duration.ofMillis(refreshTokenExpiration)));
 
-        refreshToken.setDataExpiracao(
-                LocalDateTime.now().plus(Duration.ofMillis(refreshTokenExpiration))
+        RefreshToken tokenSalvo = refreshTokenRepository.save(refreshToken);
+
+        return new RefreshTokenCreationResult(
+                token,
+                tokenSalvo.getId()
         );
-
-        refreshTokenRepository.save(refreshToken);
-
-        return token;
     }
 
     @Override
@@ -107,18 +107,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
             throw new IllegalArgumentException("O usuário e a sessão são obrigatórios.");
         }
 
-        List<RefreshToken> tokens = refreshTokenRepository
-                .findAllByUsuario_IdAndSessionId(usuarioId, sessionId);
-
-        LocalDateTime agora = LocalDateTime.now();
-
-        for (RefreshToken token : tokens) {
-
-            if (token.getDataRevogacao() == null) {
-                token.setDataRevogacao(agora);
-            }
-        }
-        refreshTokenRepository.saveAll(tokens);
+        refreshTokenRepository.revogarTodosDaSessao(
+                usuarioId,
+                sessionId,
+                LocalDateTime.now()
+        );
     }
 
     private String gerarHash(String token) {
@@ -133,7 +126,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
             return HexFormat.of().formatHex(hash);
 
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Não foi possível gerar o hash do Refresh Token.",e);
+            throw new IllegalStateException("Não foi possível gerar o hash do Refresh Token.", e);
         }
     }
 }

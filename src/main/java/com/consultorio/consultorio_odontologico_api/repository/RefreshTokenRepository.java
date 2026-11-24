@@ -1,12 +1,14 @@
-
 package com.consultorio.consultorio_odontologico_api.repository;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import jakarta.persistence.LockModeType;
 
@@ -17,6 +19,17 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
-    List<RefreshToken> findAllByUsuario_IdAndSessionId(UUID usuarioId, UUID sessionId);
-
+    @Modifying
+    @Query("""
+            UPDATE RefreshToken rt
+            SET rt.dataRevogacao = :dataRevogacao
+            WHERE rt.usuario.id = :usuarioId
+            AND rt.sessionId = :sessionId
+            AND rt.dataRevogacao IS NULL
+            """)
+    int revogarTodosDaSessao(
+            @Param("usuarioId") UUID usuarioId,
+            @Param("sessionId") UUID sessionId,
+            @Param("dataRevogacao") LocalDateTime dataRevogacao
+    );
 }

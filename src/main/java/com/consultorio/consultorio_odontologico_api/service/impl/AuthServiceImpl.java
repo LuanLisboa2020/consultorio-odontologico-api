@@ -1,4 +1,3 @@
-
 package com.consultorio.consultorio_odontologico_api.service.impl;
 
 import java.util.UUID;
@@ -14,6 +13,7 @@ import com.consultorio.consultorio_odontologico_api.dto.response.LoginResponse;
 import com.consultorio.consultorio_odontologico_api.entity.Usuario;
 import com.consultorio.consultorio_odontologico_api.security.JwtService;
 import com.consultorio.consultorio_odontologico_api.service.AuthService;
+import com.consultorio.consultorio_odontologico_api.service.RefreshTokenCreationResult;
 import com.consultorio.consultorio_odontologico_api.service.RefreshTokenService;
 import com.consultorio.consultorio_odontologico_api.service.UsuarioService;
 
@@ -52,7 +52,7 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtService.gerarAccessToken(usuario.getId());
 
         // Gera o Refresh Token e armazena somente seu hash no banco.
-        String refreshToken = refreshTokenService.criarRefreshToken(usuario, sessionId);
+        RefreshTokenCreationResult refreshTokenResult = refreshTokenService.criarRefreshToken(usuario, sessionId);
 
         // Monta a resposta pública do login.
         LoginResponse loginResponse = new LoginResponse(
@@ -62,6 +62,6 @@ public class AuthServiceImpl implements AuthService {
         );
 
         // Retorna os dados públicos e o Refresh Token separadamente.
-        return new AuthResult(loginResponse, refreshToken);
+        return new AuthResult(loginResponse, refreshTokenResult.token());
     }
 }
