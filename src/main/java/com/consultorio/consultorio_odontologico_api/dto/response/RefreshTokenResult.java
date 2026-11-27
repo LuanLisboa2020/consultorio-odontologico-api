@@ -1,4 +1,3 @@
-
 package com.consultorio.consultorio_odontologico_api.dto.response;
 
 import lombok.AllArgsConstructor;

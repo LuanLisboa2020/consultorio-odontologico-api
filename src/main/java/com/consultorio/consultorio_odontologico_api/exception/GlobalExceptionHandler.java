@@ -1,4 +1,3 @@
-
 package com.consultorio.consultorio_odontologico_api.exception;
 
 import java.util.LinkedHashMap;
@@ -22,6 +21,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, String>> tratarCredenciaisInvalidas(
             BadCredentialsException exception) {
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("mensagem", exception.getMessage()));
+    }
+
+    @ExceptionHandler(RefreshTokenReuseException.class)
+    public ResponseEntity<Map<String, String>> tratarReutilizacaoRefreshToken(
+            RefreshTokenReuseException exception) {
 
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
@@ -59,8 +67,18 @@ public class GlobalExceptionHandler {
                 .body(Map.of("mensagem", exception.getMessage()));
     }
 
+    @ExceptionHandler(ConflitoException.class)
+    public ResponseEntity<Map<String, String>> tratarConflito(
+            ConflitoException exception) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of("mensagem", exception.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> tratarErroInterno(Exception exception) {
+    public ResponseEntity<Map<String, String>> tratarErroInterno(
+            Exception exception) {
 
         logger.error("Erro interno inesperado na aplicação.", exception);
 
@@ -70,13 +88,5 @@ public class GlobalExceptionHandler {
                         "mensagem",
                         "Ocorreu um erro interno. Tente novamente mais tarde."
                 ));
-    }
-
-    @ExceptionHandler(ConflitoException.class)
-    public ResponseEntity<Map<String, String>> tratarConflito(ConflitoException exception) {
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(Map.of("mensagem", exception.getMessage()));
     }
 }
